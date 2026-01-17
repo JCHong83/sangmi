@@ -1,31 +1,29 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-
-// Mock data for 4 latest works
-const MOCK_WORKS = [
-  { id: 1, title: "Form in Flux", imageUrl: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=600&q=80", link: "/work/1" },
-  { id: 2, title: "Silent Watcher", imageUrl: "https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&w=600&q=80", link: "/work/2" },
-  { id: 3, title: "Echo Chamber", imageUrl: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=600&q=80", link: "/work/3" },
-  { id: 4, title: "Chromatic Dream", imageUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80", link: "/work/4" },
-];
+import axios from 'axios';
 
 const WorkPreviewGallery = () => {
-  // // Simple floating animation definition
-  // const floatVariants = {
-  //   // Start position: slightly high
-  //   initial: { y: 0 },
-  //   // Animated state: move 10px up/down over 6 seconds
-  //   animate: {
-  //     y: [0, -10, 0],
-  //     transition: {
-  //       duration: 6,
-  //       ease: "easeInOut",
-  //       repeat: Infinity,
-  //       repeatType: "loop",
-  //     },
-  //   },
-  // };
+  const [artworks, setArtworks] = useState([]);
+  const [loading, setLoading] =useState(true);
+
+  useEffect(() => {
+    const getArtworks = async () => {
+      try {
+        // We use ?populate=* to include the image data
+        const response = await axios.get('http://localhost:1337/api/artworks?populate=*&sort=createdAt:desc&pagination[limit]=4');
+        setArtworks(response.data.data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching from Strapi:", error);
+        setLoading(false);
+      }
+    };
+    getArtworks();
+  }, []);
+
+  if (loading) return <div className="py-24 text-center">Loading Gallery...</div>
+
 
   return (
     <section className="py-24 px-8 bg-gray-50">
@@ -34,14 +32,10 @@ const WorkPreviewGallery = () => {
       </h2>
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        {MOCK_WORKS.map((work) => (
+        {artworks.map((work) => (
           // Framer Motion applied for floating and hover scale effect
           <motion.div
             key={work.id}
-            // initial="initial"
-            // animate="animate"
-            // variants={floatVariants}
-            // style={{ animationDelay: `${index * 0.5}s` }} // staggered delay for floating
             className="group relative overflow-hidden rounded-lg shadow-xl cursor-pointer"
             // Hover effect: scale up to 1.05
             whileHover={{ scale: 1.15, zIndex: 10, boxShadow: "0 30px 60px -12px rgba(0, 0, 0, 0.3)"}}
@@ -50,7 +44,8 @@ const WorkPreviewGallery = () => {
             <Link to={work.link}>
               <div className="aspect-square overflow-hidden">
                 <img
-                  src={work.imageUrl}
+                  // Strapi stores images in /uploads
+                  src={`http://localhost:1337${work.image.url}`}
                   alt={work.title}
                   className="w-full h-full object-cover transition duration-500 group-hover:brightness-75"
                 />
@@ -58,7 +53,7 @@ const WorkPreviewGallery = () => {
 
               {/* Overlay with Title */}
               <div className="absolute inset-0 bg-gray-900/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <p className="text-white text-xl font-semibold tracking-wider p-4 border-2 border-white">
+                <p className="text-white text-xl font-semibold tracking-wider p-10">
                   {work.title}
                 </p>
               </div>

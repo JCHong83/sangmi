@@ -4,8 +4,9 @@ import LandingPage from './pages/LandingPage';
 import AboutPage from './pages/AboutPage';
 import ArtworkArchive from './pages/ArtworkArchive';
 import ExhibitionsArchive from './pages/ExhibitionsArchive';
-import BlogPage from './pages/BlogPage';
 import ContactPage from './pages/ContactPage';
+import ArtworkDetailPage from './pages/ArtworkDetailPage';
+import ExhibitionDetailPage from './pages/ExhibitionDetailPage';
 
 function App() {
   return (
@@ -20,10 +21,10 @@ function App() {
 
         {/* Archive Pages (Will later include dynamic routes for single items) */}
         <Route path="/art-archive" element={<ArtworkArchive />} />
+        <Route path="/art-archive/:slug" element={<ArtworkDetailPage />}/>
         <Route path="/exhibitions" element={<ExhibitionsArchive />} />
+        <Route path="/exhibitions/:slug" element={<ExhibitionDetailPage />} />
 
-        {/* Blog Pages (Will later include dynamic routes for single posts) */}
-        <Route path="/blog" element={<BlogPage />} />
 
         {/* 404/Not Found Page */}
         <Route path="*" element={<h1>404 - Page Not Found</h1>} />
