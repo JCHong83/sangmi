@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { API_URL, getStrapiMedia } from '../utils/api';
 
 
 const ArtworkArchive = () => {
@@ -15,12 +16,10 @@ const ArtworkArchive = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch both categories and artworks (populated with category and image)
         const [catRes, artRes] = await Promise.all([
-          axios.get('http://localhost:1337/api/categories'),
-          axios.get('http://localhost:1337/api/artworks?populate=*')
+          axios.get(`${API_URL}/categories`),
+          axios.get(`${API_URL}/artworks?populate=*&sort=createdAt:desc`)
         ]);
-
         setCategories(catRes.data.data);
         setArtworks(artRes.data.data);
         setLoading(false);
@@ -42,60 +41,72 @@ const ArtworkArchive = () => {
       return catSlug === activeFilter;
     });
 
-    if (loading) return (
-      <div className="min-h-screen flex items-center justify-center font-light tracking-widest uppercase text-gray-400">
-        Loading Archive...
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white text-[10px] uppercase tracking-[0.5em]">
+        Accessing Archive...
       </div>
     );
+  }
 
   return (
     <div className="bg-white min-h-screen">
       <Header />
 
-      <main className="max-w-7xl mx-auto px-8 py-20">
-        <header className="mb-16 text-center">
-          <h1 className="text-5xl font-light tracking-tighter uppercase mb-8 text-gray-900">
-            Archive
-          </h1>
-
-          {/* Filter Bar - Wrapped for vertical view */}
-          <div className="flex flex-wrap justify-center gap-8 border-b border-gray-100 pb-6">
-            <button
-              onClick={() => setActiveFilter('all')}
-              className={`text-xs uppercase tracking-widest font-bold transition-all duration-300 ${activeFilter === 'all'
-                ? 'text-accent scale-110'
-                : 'text-gray-400 hover:text-gray-900'}`}
-            >
-              All Works
-            </button>
-
-            {categories.map(cat => {
-              const c = cat.attributes || cat;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveFilter(c.slug)}
-                  className={`text-xs uppercase tracking-widest font-bold transition-all duration-300 ${activeFilter === c.slug
-                    ? 'text-accent scale-110'
-                    : 'text-gray-400 hover:text-gray-900'}`}
-                >
-                  {c.name}
-                </button>
-              );
-            })}
+      <main className="max-w-7xl mx-auto px-6 md:px-12 py-12 md:py-20">
+        <header className="mb-12 md:mb-20 text-center">
+          <div className="space-y-2 mb-8 md:mb-12">
+            <span className="text-[10px] uppercase tracking-[0.4em] text-accent font-bold">
+              Catalogue
+            </span>
+            <h1 className="text-4xl md:text-6xl font-light tracking-tighter uppercase text-gray-900">
+              Art Archive
+            </h1>
           </div>
+
+          {/* Filter Bar - Horizontal scroll on Mobile */}
+          <div className="relative border-b border-gray-100">
+            <div className="flex overflow-x-auto no-scrollbar justify-start md:justify-center gap-8 pb-4 scroll-smooth px-4">
+              <button
+                onClick={() => setActiveFilter('all')}
+                className={`text-[10px] uppercase tracking-[0.3em] font-bold whitespace-nowrap transition-all duration-300 border-b-2
+                  ${activeFilter === 'all'
+                  ? 'text-gray-900 border-accent'
+                  : 'text-gray-400 border-transparent hover:text-gray-900'}`}
+              >
+                All Works
+              </button>
+
+              {categories.map(cat => {
+                const c = cat.attributes || cat;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveFilter(c.slug)}
+                    className={`text-[10px] uppercase tracking-[0.3em] font-bold whitespace-nowrap transition-all duration-300 border-b-2
+                      ${activeFilter === c.slug
+                      ? 'text-gray-900 border-accent'
+                      : 'text-gray-400 border-transparent hover:text-gray-900'}`}
+                  >
+                    {c.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
         </header>
 
         {/* Artwork Grid */}
         <motion.div
           layout
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-16"
         >
           <AnimatePresence mode='popLayout'>
             {filteredArtworks.map((art) => {
               const a = art.attributes || art;
-              const imageUrl = a.image?.url ||
-                              a.image?.data?.attributes?.url;
+              const imageUrl = getStrapiMedia(a.image?.url ||
+                              a.image?.data?.attributes?.url);
               const categoryName = a.category?.name ||
                                   a.category?.data?.attributes?.name;
               
@@ -103,34 +114,40 @@ const ArtworkArchive = () => {
                 <motion.div
                   key={art.id}
                   layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.5 }}
                   className="group"
                 >
                   <Link to={`/art-archive/${a.slug}`}>
-                    <div className="aspect-4/5 overflow-hidden bg-gray-50 rounded-sm mb-4 relative shadow-sm group-hover:shadow-xl transition-shadow duration-500">
+                    <div className="aspect-4/5 overflow-hidden bg-gray-50 rounded-sm mb-6 relative shadow-sm group-hover:shadow-sm transition-all duration-500">
                       {imageUrl ? (
                         <img
-                          src={`http://localhost:1337${imageUrl}`}
+                          src={imageUrl}
                           alt={a.title}
-                          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                          className="w-full h-full object-cover grayscale md:grayscale-0 group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300 italic">
-                          No Image
+                        <div className="w-full h-full flex items-center justify-center text-[10px] uppercase tracking-widest text-gray-300">
+                          Pending Image
                         </div>
                       )}
                     </div>
 
-                    <div className="space-y-1">
-                      <h3 className="text-lg font-light text-gray-900 group-hover:text-accent transition-colors">
+                    <div className="space-y-1 text-center md:text-left px-2">
+                      <h3 className="text-sm md:text-lg font-light text-gray-900 group-hover:text-accent transition-colors">
                         {a.title}
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400">
-                        {categoryName || "Uncategorized"}
-                      </p>
+                      <div className="flex items-center justify-center md:justify-start gap-3">
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-gray-400 font-bold">
+                          {categoryName || "Art"}
+                        </span>
+                        <span className="text-[9px] text-gray-300">-</span>
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-gray-400">
+                          {a.year || "2026"}
+                        </span>
+                      </div>
                     </div>
                   </Link>
                 </motion.div>
@@ -140,7 +157,7 @@ const ArtworkArchive = () => {
         </motion.div>
 
         {filteredArtworks.length === 0 && (
-          <div className="py-20 text-center text-gray-400 italic">
+          <div className="py-40 text-center text-[10px] uppercase tracking-[0.5em] text-gray-300">
             No works found in this category.
           </div>
         )}

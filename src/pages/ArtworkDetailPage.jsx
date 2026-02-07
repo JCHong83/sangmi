@@ -5,6 +5,7 @@ import axios from 'axios';
 import { X, ZoomIn, ChevronLeft } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { API_URL, getStrapiMedia } from '../utils/api';
 
 
 const ArtworkDetailPage = () => {
@@ -16,10 +17,8 @@ const ArtworkDetailPage = () => {
   useEffect(() => {
     const fetchArtwork = async () => {
       try {
-        // Query by slug instead of ID
-        const url = `http://localhost:1337/api/artworks?filters[slug][$eq]=${slug}&populate=*`;
+        const url = `${API_URL}/artworks?filters[slug][$eq]=${slug}&populate=*`;
         const response = await axios.get(url);
-
         if (response.data.data.length > 0) {
           setArtwork(response.data.data[0]);
         }
@@ -30,22 +29,23 @@ const ArtworkDetailPage = () => {
       }
     };
     fetchArtwork();
+    window.scrollTo(0, 0); // Reset scroll on entry
   }, [slug]);
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center uppercase tracking-widest text-gray-400">
+    <div className="h-screen flex items-center justify-center text-[10px] uppercase tracking-[0.5em] text-gray-400">
       Loading Piece...
     </div>
   );
 
   if (!artwork) retrun (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="h-screen flex items-center justify-center uppercase tracking-widest">
       Piece not found.
     </div>
   );
 
   const a = artwork.attributes || artwork;
-  const imageUrl = a.image?.url || a.image?.data?.attributes?.url;
+  const imageUrl = getStrapiMedia(a.image?.url || a.image?.data?.attributes?.url);
   const categoryName = a.category?.name || a.category?.data?.attributes?.name;
 
   return (
@@ -54,73 +54,76 @@ const ArtworkDetailPage = () => {
 
       <main>
 
-        {/* 1. HERO VIEW: 100vh - Header (h-20/80px) */}
-        <section className="relative w-full h-[calc(100vh-80px)] bg-gray-50 flex items-center justify-center p-4 md:p-12 overflow-hidden">
+        {/* 1. HERO VIEW: Optimized for mobile viewports */}
+        <section className="relative w-full h-[70vh] md:h-[calc(100svh-96px)] bg-gray-50/50 flex items-center justify-center p-6 md:p-12 overflow-hidden">
           
           <Link
             to="/art-archive"
-            className="absolute top-8 left-8 z-10 flex items-center gap-2 text-xs uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors"
+            className="absolute top-6 left-6 md:top-8 md:left-8 z-10 flex items-center gap-2 text-[9px] md:text-xs uppercase tracking-[0.2em] text-gray-400 hover:text-gray-900 transition-colors"
           >
-            <ChevronLeft size={16} /> Back to Archive
+            <ChevronLeft size={14} /> Back to Archive
           </Link>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative h-full max-w-full group cursor-zoom-in"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative h-full w-full flex items-center justify-center group cursor-zoom-in"
             onClick={() => setIsLightboxOpen(true)}
           >
             <img
-              src={`http://localhost:1337${imageUrl}`}
+              src={imageUrl}
               alt={a.title}
-              className="h-full w-auto object-contain shadow-2xl"
+              className="max-h-full max-w-full object-contain shadow-2xl transition-transform duration-700"
             />
+
             {/* Hover Indicator */}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="bg-white/90 p-3 rounded-full shadow-lg">
-                <ZoomIn size={24} className="text-gray-900" />
+            <div className="absolute inset-0 hidden md:flex items-center justify-center bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="bg-white/90 p-4 rounded-full shadow-xl">
+                <ZoomIn size={20} className="text-gray-900" />
               </div>
             </div>
           </motion.div>
-
         </section>
 
-        {/* 2. GALLERY CARD VIEW: Details below the fold */}
-        <section className="max-w-4xl mx-auto py-24 px-8">
-          <div className="border-l-2 border-accent pl-8 md:pl-16 space-y-8">
-            <header className="space-y-2">
-              <p className="text-xs uppercase tracking-[0.3em] text-accent font-bold">
-                {categoryName}
-              </p>
-              <h1 className="text-5xl font-light text-gray-900 tracking-tighter uppercase">
+        {/* 2. DETAILS SECTION */}
+        <section className="max-w-5xl mx-auto py-16 md:py-24 px-8 md:px-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 md:gap-16">
+
+            {/* Header Column */}
+            <div className="lg:col-span-12 border-b border-gray-100 pb-12">
+              <span className="text-[10px] uppercase tracking-[0.4em] text-accent font-bold mb-4 block">
+                {categoryName || "Original Work"}
+              </span>
+              <h1 className="text-4xl md:text-7xl font-light text-gray-900 tracking-tighter uppercase leading-none">
                 {a.title}
               </h1>
-            </header>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pt-8">
-              {/* Technical Details Column */}
-              <div className="md:col-span-1 text-sm space-y-4 text-gray-500 uppercase tracking-widest">
-                <div>
-                  <span className="block font-bold text-gray-900 mb-1">Year</span>
-                  {a.year || "2024"}
+            {/* Technical Column */}
+            <div className="lg:col-span-4 space-y-8 order-2 lg:order-1">
+              <div className="grid grid-cols-2 lg:grid-cols-1 gap-8">
+                <div className="space-y-1">
+                  <span className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold">Year</span>
+                  <p className="text-sm text-gray-900 font-light">{a.year || "2026"}</p>
                 </div>
-                <div>
-                  <span className="block font-bold text-gray-900 mb-1">Medium</span>
-                  {a.medium || "Mixed Media on Canvas"}
+                <div className="space-y-1">
+                  <span className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold">Medium</span>
+                  <p className="text-sm text-gray-900 font-light">{a.medium}</p>
                 </div>
-                <div>
-                  <span className="block font-bold text-gray-900 mb-1">Dimensions</span>
-                  {a.dimensions || "Variable Dimensions"}
+                <div className="space-y-1">
+                  <span className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold">Dimensions</span>
+                  <p className="text-sm text-gray-900 font-light">{a.dimensions}</p>
                 </div>
-              </div>
-
-              {/* Description Column */}
-              <div className="md:col-span-2">
-                <p className="text-lg text-gray-600 font-light leading-relaxed whitespace-pre-line italic">
-                  "{a.description || "No description provided for this piece."}"
-                </p>
               </div>
             </div>
+
+            {/* Description Column */}
+            <div className="lg:col-span-8 order-1 lg:order-2">
+              <p className="text-lg md:text-xl text-gray-600 font-light leading-relaxed whitespace-pre-line italic">
+                "{a.description ? `"${a.description}"` : "Description pending."}"
+              </p>
+            </div>
+
           </div>
         </section>
       </main>
@@ -132,21 +135,21 @@ const ArtworkDetailPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-100 bg-white flex items-center justify-center p-4"
+            className="fixed inset-0 z-200 bg-white flex items-center justify-center p-4 md:p-12"
           >
             <button
               onClick={() => setIsLightboxOpen(false)}
-              className="absolute top-8 right-8 text-gray-400 hover:text-gray-900 transition-colors p-2"
+              className="absolute top-6 right-6 md:top-10 md:right-10 text-gray-400 hover:text-gray-900 transition-colors"
             >
-              <X size={32} />
+              <X size={32} strokeWidth={1} />
             </button>
 
             <motion.img
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              src={`http://localhost:1337${imageUrl}`}
+              src={imageUrl}
               alt={a.title}
-              className="max-w-full max-h-full object-contain shadow-2xl"
+              className="max-w-full max-h-full object-contain"
             />
           </motion.div>
         )}

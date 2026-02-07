@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Calendar, Clock } from 'lucide-react'; // Icons
+import { MapPin, Calendar, Clock, ArrowRight } from 'lucide-react'; // Icons
 import axios from 'axios';
+import { API_URL, getStrapiMedia } from '../utils/api';
 
 
 const LatestExhibition = () => {
@@ -12,7 +13,7 @@ const LatestExhibition = () => {
     const fetchLatestExhibition = async () => {
       try {
         // Query : Get only 1, sort by newest first
-        const url = 'http://localhost:1337/api/exhibitions?populate=*&sort=createdAt:desc&pagination[limit=1';
+        const url = `${API_URL}/exhibitions?populate=*&sort=createdAt:desc&pagination[limit]=1`;
         const response = await axios.get(url);
 
         if (response.data.data.length > 0) {
@@ -27,63 +28,79 @@ const LatestExhibition = () => {
     fetchLatestExhibition();
   }, []);
 
-  if (loading) return null; // Or a subtle skeleton loader
-  if (!exhibition) return null; // Hide section if no exhibition exist
+  if (loading || !exhibition) return null;
 
   // Data normalization for v4/v5
   const data = exhibition.attributes || exhibition;
-  const posterUrl = data.poster?.url || data.poster?.data?.attributes?.url;
+  const posterUrl = getStrapiMedia (
+    data.poster?.url || data.poster?.data?.attributes?.url
+  );
 
   return (
-    <section className="max-w-6xl mx-auto py-24 px-8">
-      <h2 className="text-4xl font-extrabold text-gray-900 mb-12 text-center">
-        Latest Exhibition
-      </h2>
+    <section className="py-24 px-6 md:px-10 bg-gray-50/50">
+      <div className="max-w-6xl mx-auto">
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-10 border border-gray-200 rounded-xl overflow-hidden shadow-2xl">
-
-        {/* Exhibition Poster */}
-        <div className="md:col-span-1 bg-gray-100">
-          {posterUrl && (
-            <img
-              src={`http://localhost:1337${posterUrl}`}
-              alt={data.title}
-              className="w-full h-full object-cover transform hover:scale-[1.02] transition duration-500"
-            />
-          )}
-          
+        {/* Section Label */}
+        <div className="text-center mb-16 md:mb-20">
+          <span className="text-[10px] uppercase tracking-[0.5em] text-accent font-bold">
+            Current / Upcoming
+          </span>
+          <h2 className="text-3xl md:text-5xl font-light text-gray-900 uppercase tracking-tighter mt-4">
+            Latest Exhibition
+          </h2>
         </div>
 
-        {/* Exhibition Metadata */}
-        <div className="md:col-span-2 p-10 flex flex-col justify-center space-y-8">
-          
-            <h3 className="text-5xl font-light text-gray-900 hover:text-accent transition duration-300">
-              {data.title}
-            </h3>
-          
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 bg-white border-gray-100 rounded-sm overflow-hidden shadow-sm">
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
-            <div className="flex items-center space-x-3">
-              <MapPin className="text-accent w-6 h-6 shrink-0" />
-              <p className="text-lg">{data.location}</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Calendar className="text-accent w-6 h-6 shrink-0" />
-              <p className="text-lg">{data.dateText}</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Clock className="text-accent w-6 h-6 shrink-0" />
-              <p className="text-lg">{data.timeText}</p>
-            </div>
+          {/* Exhibition Poster - 5 Columns */}
+          <div className="lg:col-span-5 aspect-3/4 lg:aspect-auto overflow-hidden">
+            {posterUrl && (
+              <img
+                src={posterUrl}
+                alt={data.title}
+                className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000"
+              />
+            )}
           </div>
 
-          <Link
-            to={`/exhibitions/${data.slug}`}
-            className="mt-6 self-start py-3 px-8 text-lg bg-gray-900 text-white font-semibold rounded-full shadow-lg hover:bg-accent transition duration-300"
-          >
-            Exhibition Details
-          </Link>
+          {/* Exhibition Metadata */}
+          <div className="md:col-span-7 p-8 md:p-16 flex flex-col justify-center">
+
+            <div className="space-y-6">
+              <h3 className="text-3xl md:text-5xl font-light text-gray-900 tracking-tighter leading-tight">
+                {data.title}
+              </h3>
+
+              {/* Details Grid */}
+              <div className="space-y-4 text-gray-500 uppercase tracking-widest text-[10px] md:text-xs">
+                <div className="flex items-center gap-4">
+                  <MapPin size={16} className="text-accent" />
+                  <span>{data.location}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Calendar size={16} className="text-accent" />
+                  <span>{data.datePeriod || date.dateText}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Clock size={16} className="text-accent" />
+                  <span>{data.openingTime || data.timeText}</span>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Link
+                  to={`/exhibitions/${data.slug}`}
+                  className="inline-flex items-center gap-4 group"
+                >
+                  <span className="text-xs uppercase tracking-[0.3em] font-bold text-gray-900 group-hover:text-accent transition-colors">
+                    View Exhibition Details
+                  </span>
+                  <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform" />
+                </Link>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </section>
